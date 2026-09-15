@@ -809,6 +809,7 @@ function itemById(id) {
 
 function bindRenderedEvents() {
   $$('.structure-card').forEach(card => {
+    bindCardTilt(card);
     const itemId = card.dataset.itemId;
     $$('[data-toggle-images]', card).forEach(btn => btn.addEventListener('click', () => toggleImages(itemId)));
     const input = $('[data-file-input]', card);
@@ -819,6 +820,34 @@ function bindRenderedEvents() {
       e.target.value = '';
     });
     $('[data-zoom-first]', card)?.addEventListener('click', () => openFirstZoom(itemId));
+  });
+}
+
+function bindCardTilt(card) {
+  // Efeito 3D suave no desktop; em toque o CSS desativa para manter usabilidade.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(hover: none), (pointer: coarse)').matches) return;
+  let raf = 0;
+  card.addEventListener('pointermove', ev => {
+    const r = card.getBoundingClientRect();
+    const x = (ev.clientX - r.left) / r.width;
+    const y = (ev.clientY - r.top) / r.height;
+    const ry = (x - .5) * 5.5;
+    const rx = (.5 - y) * 4.5;
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      card.style.setProperty('--rx', `${rx.toFixed(2)}deg`);
+      card.style.setProperty('--ry', `${ry.toFixed(2)}deg`);
+      card.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
+      card.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
+    });
+  });
+  card.addEventListener('pointerleave', () => {
+    cancelAnimationFrame(raf);
+    card.style.setProperty('--rx', '0deg');
+    card.style.setProperty('--ry', '0deg');
+    card.style.setProperty('--mx', '50%');
+    card.style.setProperty('--my', '0%');
   });
 }
 
